@@ -23,10 +23,10 @@ class OLLAMAInterface:
         :param model:
         :param system_prompt:
         """
+        base_url_ollama = f"{protocol}{host}:{port}"
+        print(f"[OLLAMAInterface] Connecting to OLLAMA on: {base_url_ollama}")
         ollama_instance = ollama.Client(
-            base_url=f"{protocol}{host}:{port}",
-            model=model,
-            temperature=temperature,
+            host=base_url_ollama,
         )
         model_list_on_ollama = [ollama_mdl.model for ollama_mdl in ollama_instance.list().models]
         if model not in model_list_on_ollama:
@@ -35,14 +35,11 @@ class OLLAMAInterface:
             ollama_instance.pull(model)
             print(f"[OLLAMAInterface] Model '{model}' is downloaded successfully.")
 
-        gpu_available = 0
-        if torch.cuda.is_available():
-            print(f"[OLLAMAInterface] CUDA is available. Using GPU for inference.")
-            gpu_available = torch.cuda.device_count()
+        if not torch.cuda.is_available():
+            print(f"[OLLAMAInterface] CUDA is NOT available. Using CPU for inference.")
 
         self.llm = ChatOllama(
             base_url=f"{protocol}{host}:{port}",
-            num_gpu=gpu_available,
             num_predict=-1,  # -1 means no limit on the generation
             model=model,
             temperature=temperature
@@ -65,8 +62,13 @@ class OLLAMAInterface:
                 '```', ''
             ).replace(
                 '```json',
-                '').strip()
+                ''
+            ).replace(
+                '```JSON',
+                ''
+            ).strip()
             data = json.loads(inference_output)
+            print("[OLLAMAInterface] Done parsing the result...")
             return data
         except json.JSONDecodeError as e:
             print(f"Error decoding JSON: {e}")
@@ -75,32 +77,23 @@ class OLLAMAInterface:
     def inference(
         self,
         user_prompt: str,
-        files: Optional[List[str]] = None
+        context: Optional[str] = None,
     ) -> Optional[Union[Dict[str, Any], List[Dict[str, Any]]]]:
         """
         Perform inference using the OLLAMA model.
         :param user_prompt:
-        :param files:
+        :param context:
         :return:
         """
         messages = []
         if self.system_prompt:
             messages.append(("system", self.system_prompt))
 
-        if files:
-            i = 0
-            for file in files:
-                try:
-                    if os.path.exists(file) and os.path.isfile(file) and file.endswith('.txt'):
-                        with open(file, 'r') as f:
-                            file_content = f.read()
-                        i += 1
-                        user_prompt += f"\n\nAttachment #{i}:\n{file_content}"
-
-                except Exception as e:
-                    print(f"[OLLAMAInterface] Error reading file {file}: {e}")
-                    continue
+        if context:
+            user_prompt = f"Here's the context:\n{context}\n\n{user_prompt}"
 
         messages.append(("user", user_prompt))
+        print("[OLLAMAInterface] Doing inference...")
         response = self.llm.invoke(messages)
+        print("[OLLAMAInterface] Inference done. Parsing the result...")
         return self.parse_inference_output(response.content)

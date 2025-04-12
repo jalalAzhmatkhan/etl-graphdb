@@ -23,14 +23,14 @@ class LLMService:
 
     def ollama_inference(
         self,
-        attached_files: Optional[List[str]] = None,
+        context: Optional[str] = None,
         system_prompt: Optional[str] = None,
         temperature: float = 0.05,
         user_prompt: Optional[str] = None,
     )->Optional[Union[Dict[str, Any], List[Dict[str, Any]]]]:
         """
         Perform inference using the OLLAMA service provider.
-        :param attached_files:
+        :param context:
         :param system_prompt:
         :param temperature:
         :param user_prompt:
@@ -55,12 +55,12 @@ class LLMService:
         )
         return self.llm.inference(
             user_prompt,
-            attached_files
+            context
         )
 
     def inference(
         self,
-        attached_files: Optional[List[str]] = None,
+        context: Optional[str] = None,
         *,
         system_prompt: str,
         temperature: float,
@@ -72,7 +72,7 @@ class LLMService:
         """
         if self.selected_service == "ollama":
             return self.ollama_inference(
-                attached_files=attached_files,
+                context=context,
                 system_prompt=system_prompt,
                 temperature=temperature,
                 user_prompt=user_prompt,

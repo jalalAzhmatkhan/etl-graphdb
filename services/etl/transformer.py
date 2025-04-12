@@ -1,3 +1,4 @@
+import os
 from typing import Any, Optional, Literal
 
 import pandas as pd
@@ -16,21 +17,41 @@ class TransformerService:
         :param file:
         :return:
         """
-        llm_client = LLMService(
-            model_name=settings.LLM_MODEL,
-            selected_service=settings.LLM_SERVICE,
-            service_host=settings.LLM_HOST,
-            service_port=settings.LLM_PORT,
-            service_protocol=settings.LLM_CONNECT_PROTOCOL
-        )
-        transformed_data = llm_client.inference(
-            attached_files=[file],
-            system_prompt=SYSTEM_PROMPT,
-            temperature=settings.LLM_TEMPERATURE,
-            user_prompt=TRANSFORMER_FROM_MARKDOWN_PROMPT
-        )
+        df_response = pd.DataFrame()
+        if not os.path.exists(file) and not os.path.isfile(file):
+            raise ValueError(f"[TransformerService] File does not exist: {file}")
 
-        return pd.DataFrame(transformed_data)
+        file_contents = []
+        with open(file, "r", encoding="utf-8") as f:
+            file_contents = f.readlines()
+
+        responses = []
+        if len(file_contents) > 0:
+            llm_client = LLMService(
+                model_name=settings.LLM_MODEL,
+                selected_service=settings.LLM_SERVICE,
+                service_host=settings.LLM_HOST,
+                service_port=settings.LLM_PORT,
+                service_protocol=settings.LLM_CONNECT_PROTOCOL
+            )
+            print(f"[TransformerService] LLM client initialized with model: {settings.LLM_MODEL}")
+
+            for row_i in range(1, len(file_contents)):
+                columns = file_contents[0] if not file_contents[0].endswith("\n") else file_contents[0][:-1]
+                attached_context = columns + "\n" + file_contents[row_i]
+                transformed_data = llm_client.inference(
+                    context=attached_context,
+                    system_prompt=SYSTEM_PROMPT,
+                    temperature=settings.LLM_TEMPERATURE,
+                    user_prompt=TRANSFORMER_FROM_MARKDOWN_PROMPT
+                )
+                print(f"[TransformerService] Transforming file: {file} SUCCESS")
+                responses.append(transformed_data)
+
+        if len(responses) > 0:
+            # Convert the list of dictionaries to a DataFrame
+            df_response = pd.DataFrame(responses)
+        return df_response
 
     def transform(
         self,

@@ -1,9 +1,43 @@
 import os
-from typing import Any, Literal, Optional, Tuple
+from typing import Any, Literal, Optional, Tuple, Union
 
+import pandas as pd
 from PyPDF2 import DocumentInformation, PdfReader, PageObject
 
 class ExtractorService:
+    def extract_excel(
+        self,
+        url: str,
+        header: Optional[int] = None,
+        sheet: Optional[Union[str, int]] = None,
+        used_columns: Optional[str] = None,
+    ) -> pd.DataFrame:
+        """
+        Extracts data from an Excel file at the given URL.
+        Args:
+            url (str): The URL of the Excel file to extract data from.
+            header (Optional[int]): The row number to use as the column names.
+            sheet (Optional[Union[str, int]]): The name or index of the sheet to extract data from.
+            used_columns (Optional[str]): A comma-separated list of column names to use.
+        Returns:
+            dict: The extracted data.
+        """
+        if not os.path.exists(url) and os.path.isfile(url):
+            raise ValueError(f"[ExtractorService] File does not exist: {url}")
+        if not url.endswith('.xlsx') or not url.endswith('.xls'):
+            raise ValueError(f"[ExtractorService] Invalid file type: {url}")
+
+        # Implementation for extracting data from Excel
+        df_data = pd.read_excel(   # type: ignore
+            url,
+            header=header,
+            index_col=None,
+            sheet_name=sheet,
+            usecols=used_columns,
+        )
+
+        return df_data
+
     def extract_pypdf_page_object(self, page: PageObject)-> Any:
         """
         Extracts text from a PyPDF2 PageObject.
