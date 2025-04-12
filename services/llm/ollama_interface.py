@@ -70,6 +70,7 @@ class OLLAMAInterface:
             return data
         except json.JSONDecodeError as e:
             print(f"Error decoding JSON: {e}")
+            print(f"Raw inference output: {inference_output}")
             return None
 
     def inference(
@@ -88,7 +89,7 @@ class OLLAMAInterface:
             messages.append(("system", self.system_prompt))
 
         if context:
-            user_prompt = f"Here's the context:\n{context}\n\n{user_prompt}"
+            user_prompt += context if user_prompt.endswith("\n") else f"\n{context}"
 
         messages.append(("user", user_prompt))
         response = self.llm.invoke(messages)

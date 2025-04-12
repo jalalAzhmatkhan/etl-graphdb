@@ -23,6 +23,7 @@ Please extract the following information from the markdown file, and return it i
     "units_measurement": "string_or_null",
     "cov_or_polling": "string_or_null"
 }
+Please ensure to return \"null\" for any missing values, and use the correct data types as specified.
 
 **Markdown file content example:**
 S/N Equipment Location Serving Location Nomenclature Naming ObjectName Read/Write Permission Upper Limit Lower Limit Object Type Device ID Object Instance BACnet IP Address BACnet IP port Mac Address Object Description Units Measurement COV/Polling
@@ -45,14 +46,14 @@ S/N Equipment Location Serving Location Nomenclature Naming ObjectName Read/Writ
     \"mac_address\": \"00:50:06:2E:C4:CB\",
     \"object_description\": \"C1-AHU-02-01 Running Status\",
     \"units_measurement\": \"NA\",
-    \"cov_or_polling\": null
+    \"cov_or_polling\": \"null\"
 }
 **Markdown file content example:**
 S/N Equipment Location Serving Location Nomenclature Naming ObjectName Read/Write Permission Upper Limit Lower Limit Object Type Device ID Object Instance BACnet IP Address BACnet IP port Mac Address Object Description Units Measurement COV/Polling
 Level 2 Level 1 PLGS-C1-AHU-02-01 C1_AHU_02_01.SATemp_SP Read Only NA NA ANALOG VALUE device, 3065035 Analog Value 19 10.239.226.249 47808 00:50:06:2E:C4:CB C1-AHU-02-01 Supply Air Temperature Setpoint  ℃
 **Example response:**
 {
-    \"s_n\": null,
+    \"s_n\": \"null\",
     \"equipment_location\": \"Level 2\",
     \"serving_location\": \"Level 1\",
     \"nomenclature_naming\": \"PLGS-C1-AHU-02-0\",
@@ -68,7 +69,7 @@ Level 2 Level 1 PLGS-C1-AHU-02-01 C1_AHU_02_01.SATemp_SP Read Only NA NA ANALOG 
     \"mac_address\": \"00:50:06:2E:C4:CB\",
     \"object_description\": \"C1-AHU-02-01 Supply Air Temperature Setpoint\",
     \"units_measurement\": \"℃\",
-    \"cov_or_polling\": null
+    \"cov_or_polling\": \"null\"
 }
 
 **Now here's the real markdown content:**

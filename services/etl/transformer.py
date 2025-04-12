@@ -67,6 +67,7 @@ class TransformerService:
                 attached_context = columns + "\n" + file_contents[row_i]
                 contexts.append(attached_context)
 
+            print(f"[TransformerService] Processing {len(contexts)} contexts in parallel...")
             context_bag = dbag.from_sequence(contexts).repartition(npartitions=5).persist()
             # Perform the transformation in parallel
             transformed_result_bag = context_bag.map(
@@ -87,6 +88,7 @@ class TransformerService:
         self,
         data: Optional[Any] = None,
         data_type: Literal['markdown', 'pandas-dataframe', 'text'] = 'text',
+        output_filepath: Optional[str] = None
     )->pd.DataFrame:
         response = pd.DataFrame()
 
@@ -96,6 +98,11 @@ class TransformerService:
 
             # Convert markdown to DataFrame
             response = self.text_transformer_from_file(data)
+
+        if output_filepath:
+            if os.path.exists(output_filepath) and os.path.isfile(output_filepath):
+                os.remove(output_filepath)  # Delete existing file
+            response.to_csv(output_filepath, index=False)
 
         return response
 

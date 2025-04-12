@@ -40,9 +40,14 @@ class ETLPipelineService:
 
         # Transform the extracted data
         print("[ETLPipelineService] Transforming data")
+        transformed_output = os.path.join(
+            output_dir,
+            f"{os.path.splitext(output_filename)[0]}_transformed.csv"
+        )
         transformed_data = transformer_service.transform(
             data=extracted_file_output,
-            data_type=output_data_type
+            data_type=output_data_type,
+            output_filepath=transformed_output,
         )
         print(f"[ETLPipelineService] Done transforming from {extracted_file_output}")
 
