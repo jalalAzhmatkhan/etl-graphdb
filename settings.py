@@ -21,6 +21,15 @@ class Settings(BaseSettings):
     DATASOURCE_DIR: str
     OUTPUT_DIR: str
 
+    # Dask Settings
+    DASK_CPU_LIMIT: int
+    DASK_DASHBOARD_PORT: str
+    DASK_MEMORY_LIMIT: str
+    DASK_SCHEDULER_ADDRESS: Optional[str] = None
+    N_WORKER_DASK: int
+    N_THREADS_PER_DASK_WORKER: int
+
+    # LLM Settings
     LLM_SERVICE: str
     LLM_MODEL: str
     LLM_HOST: Optional[str] = "localhost"

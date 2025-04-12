@@ -78,7 +78,7 @@ class ExtractorService:
     def extract(
         self,
         url: str,
-        file_type: Literal['pdf', 'excel'] = 'pdf',
+        file_type: Literal['csv', 'excel', 'pdf'] = 'pdf',
         output: Optional[str] = None,
     ) -> Any:
         """

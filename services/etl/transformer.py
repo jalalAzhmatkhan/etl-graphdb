@@ -1,6 +1,14 @@
 import os
-from typing import Any, Optional, Literal
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Union,
+)
 
+import dask.bag as dbag
 import pandas as pd
 
 from constants import SYSTEM_PROMPT, TRANSFORMER_FROM_MARKDOWN_PROMPT
@@ -8,6 +16,23 @@ from services.llm.llm_service import LLMService
 from settings import settings
 
 class TransformerService:
+    def dask_transformer(
+        self,
+        context: str,
+        llm_client_interface: LLMService,
+    )->Optional[Union[Dict[str, Any], List[Dict[str, Any]]]]:
+        transformed_data = None
+        try:
+            transformed_data = llm_client_interface.inference(
+                context=context,
+                system_prompt=SYSTEM_PROMPT,
+                temperature=settings.LLM_TEMPERATURE,
+                user_prompt=TRANSFORMER_FROM_MARKDOWN_PROMPT
+            )
+        except Exception as e:
+            print(f"[TransformerService] Error transforming data using Dask: {e}")
+        return transformed_data
+
     def text_transformer_from_file(
         self,
         file: str
@@ -36,17 +61,22 @@ class TransformerService:
             )
             print(f"[TransformerService] LLM client initialized with model: {settings.LLM_MODEL}")
 
+            contexts = []
             for row_i in range(1, len(file_contents)):
                 columns = file_contents[0] if not file_contents[0].endswith("\n") else file_contents[0][:-1]
                 attached_context = columns + "\n" + file_contents[row_i]
-                transformed_data = llm_client.inference(
-                    context=attached_context,
-                    system_prompt=SYSTEM_PROMPT,
-                    temperature=settings.LLM_TEMPERATURE,
-                    user_prompt=TRANSFORMER_FROM_MARKDOWN_PROMPT
+                contexts.append(attached_context)
+
+            context_bag = dbag.from_sequence(contexts).repartition(npartitions=5).persist()
+            # Perform the transformation in parallel
+            transformed_result_bag = context_bag.map(
+                lambda context: self.dask_transformer(
+                    context,
+                    llm_client
                 )
-                print(f"[TransformerService] Transforming file: {file} row: {row_i + 1} SUCCESS")
-                responses.append(transformed_data)
+            ).compute()
+
+            responses = [result for result in transformed_result_bag if result is not None]
 
         if len(responses) > 0:
             # Convert the list of dictionaries to a DataFrame
@@ -56,7 +86,7 @@ class TransformerService:
     def transform(
         self,
         data: Optional[Any] = None,
-        data_type: Literal['markdown', 'text'] = 'text',
+        data_type: Literal['markdown', 'pandas-dataframe', 'text'] = 'text',
     )->pd.DataFrame:
         response = pd.DataFrame()
 
