@@ -24,7 +24,6 @@ class OLLAMAInterface:
         :param system_prompt:
         """
         base_url_ollama = f"{protocol}{host}:{port}"
-        print(f"[OLLAMAInterface] Connecting to OLLAMA on: {base_url_ollama}")
         ollama_instance = ollama.Client(
             host=base_url_ollama,
         )
@@ -68,7 +67,6 @@ class OLLAMAInterface:
                 ''
             ).strip()
             data = json.loads(inference_output)
-            print("[OLLAMAInterface] Done parsing the result...")
             return data
         except json.JSONDecodeError as e:
             print(f"Error decoding JSON: {e}")
@@ -93,7 +91,5 @@ class OLLAMAInterface:
             user_prompt = f"Here's the context:\n{context}\n\n{user_prompt}"
 
         messages.append(("user", user_prompt))
-        print("[OLLAMAInterface] Doing inference...")
         response = self.llm.invoke(messages)
-        print("[OLLAMAInterface] Inference done. Parsing the result...")
         return self.parse_inference_output(response.content)

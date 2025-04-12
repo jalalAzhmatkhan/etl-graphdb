@@ -45,7 +45,7 @@ class TransformerService:
                     temperature=settings.LLM_TEMPERATURE,
                     user_prompt=TRANSFORMER_FROM_MARKDOWN_PROMPT
                 )
-                print(f"[TransformerService] Transforming file: {file} SUCCESS")
+                print(f"[TransformerService] Transforming file: {file} row: {row_i + 1} SUCCESS")
                 responses.append(transformed_data)
 
         if len(responses) > 0:
