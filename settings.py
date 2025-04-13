@@ -36,5 +36,6 @@ class Settings(BaseSettings):
     LLM_PORT: Optional[int] = 11434
     LLM_CONNECT_PROTOCOL: str = "http://"
     LLM_TEMPERATURE: float
+    LLM_NUM_THREADS: int
 
 settings = Settings()

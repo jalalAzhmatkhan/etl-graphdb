@@ -1,10 +1,11 @@
 import json
-import os
 from typing import Any, Dict, List, Literal, Optional, Union
 
 from langchain_ollama.chat_models import ChatOllama
 import ollama
 import torch
+
+from settings import settings
 
 class OLLAMAInterface:
     def __init__(
@@ -40,6 +41,7 @@ class OLLAMAInterface:
         self.llm = ChatOllama(
             base_url=f"{protocol}{host}:{port}",
             num_predict=-1,  # -1 means no limit on the generation
+            num_thread=settings.LLM_NUM_THREADS,
             model=model,
             temperature=temperature
         )
