@@ -48,8 +48,8 @@ if __name__ == '__main__':
         data_source_dir=settings.DATASOURCE_DIR,
         input_data_type='excel',
         output_data_type='pandas-dataframe',
-        used_input_columns="A:E",  # Use columns A to E first
-        cached_transformation=True,
+        cached_extraction=False,
+        cached_transformation=False,
         source_filename="PLG ACMV Relationship.xlsx",
         output_dir=settings.OUTPUT_DIR,
         output_filename="plg_acmv_relationship.csv",

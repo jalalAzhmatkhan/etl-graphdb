@@ -84,16 +84,31 @@ class TransformerService:
             df_response = pd.DataFrame(responses)
         return df_response
 
-    def excel_transformer(
+    def excel_data_filler(
         self,
         df_data: pd.DataFrame,
     )->pd.DataFrame:
         """
         Transform Excel data into a DataFrame and Perform preprocessing.
         :param df_data:
+        :param zone:
         :return:
         """
-        pass
+        # Perform preprocessing on the DataFrame
+        # Drop all rows where all columns except "Zone" are Null
+        df_data = df_data.loc[df_data.drop(columns=['Zone']).notna().any(axis=1)]
+
+        # Do forward-fill on the null values in the "Location" column
+        df_data["Location"] = df_data["Location"].fillna(method="ffill")
+        df_data["Location"] = df_data["Location"].str.strip()
+        # Do forward-fill on the null values in the "1st Layer" column
+        df_data["1st Layer"] = df_data["1st Layer"].fillna(method="ffill")
+        df_data["1st Layer"] = df_data["1st Layer"].str.strip()
+        # Do forward-fill on the null values in the "Serving Area" column
+        df_data["Serving Area"] = df_data["Serving Area"].fillna(method="ffill")
+        df_data["Serving Area"] = df_data["Serving Area"].str.strip()
+
+        return df_data
 
     def transform(
         self,
@@ -113,7 +128,8 @@ class TransformerService:
             if not os.path.exists(data) and not os.path.isfile(data):
                 raise ValueError(f"[TransformerService] File does not exist: {data}")
 
-            df_data = pd.read_csv(data)
+            # Process the Excel file
+            response = self.excel_data_filler(pd.read_csv(data))
 
         if output_filepath:
             if os.path.exists(output_filepath) and os.path.isfile(output_filepath):
