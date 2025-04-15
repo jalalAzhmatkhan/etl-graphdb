@@ -1,10 +1,11 @@
 import json
-import os
 from typing import Any, Dict, List, Literal, Optional, Union
 
 from langchain_ollama.chat_models import ChatOllama
 import ollama
 import torch
+
+from settings import settings
 
 class OLLAMAInterface:
     def __init__(
@@ -23,10 +24,9 @@ class OLLAMAInterface:
         :param model:
         :param system_prompt:
         """
+        base_url_ollama = f"{protocol}{host}:{port}"
         ollama_instance = ollama.Client(
-            base_url=f"{protocol}{host}:{port}",
-            model=model,
-            temperature=temperature,
+            host=base_url_ollama,
         )
         model_list_on_ollama = [ollama_mdl.model for ollama_mdl in ollama_instance.list().models]
         if model not in model_list_on_ollama:
@@ -35,15 +35,13 @@ class OLLAMAInterface:
             ollama_instance.pull(model)
             print(f"[OLLAMAInterface] Model '{model}' is downloaded successfully.")
 
-        gpu_available = 0
-        if torch.cuda.is_available():
-            print(f"[OLLAMAInterface] CUDA is available. Using GPU for inference.")
-            gpu_available = torch.cuda.device_count()
+        if not torch.cuda.is_available():
+            print(f"[OLLAMAInterface] CUDA is NOT available. Using CPU for inference.")
 
         self.llm = ChatOllama(
             base_url=f"{protocol}{host}:{port}",
-            num_gpu=gpu_available,
             num_predict=-1,  # -1 means no limit on the generation
+            num_thread=settings.LLM_NUM_THREADS,
             model=model,
             temperature=temperature
         )
@@ -65,41 +63,35 @@ class OLLAMAInterface:
                 '```', ''
             ).replace(
                 '```json',
-                '').strip()
+                ''
+            ).replace(
+                '```JSON',
+                ''
+            ).strip()
             data = json.loads(inference_output)
             return data
         except json.JSONDecodeError as e:
             print(f"Error decoding JSON: {e}")
+            print(f"Raw inference output: {inference_output}")
             return None
 
     def inference(
         self,
         user_prompt: str,
-        files: Optional[List[str]] = None
+        context: Optional[str] = None,
     ) -> Optional[Union[Dict[str, Any], List[Dict[str, Any]]]]:
         """
         Perform inference using the OLLAMA model.
         :param user_prompt:
-        :param files:
+        :param context:
         :return:
         """
         messages = []
         if self.system_prompt:
             messages.append(("system", self.system_prompt))
 
-        if files:
-            i = 0
-            for file in files:
-                try:
-                    if os.path.exists(file) and os.path.isfile(file) and file.endswith('.txt'):
-                        with open(file, 'r') as f:
-                            file_content = f.read()
-                        i += 1
-                        user_prompt += f"\n\nAttachment #{i}:\n{file_content}"
-
-                except Exception as e:
-                    print(f"[OLLAMAInterface] Error reading file {file}: {e}")
-                    continue
+        if context:
+            user_prompt += context if user_prompt.endswith("\n") else f"\n{context}"
 
         messages.append(("user", user_prompt))
         response = self.llm.invoke(messages)
