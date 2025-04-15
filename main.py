@@ -36,8 +36,22 @@ if __name__ == '__main__':
     etl_service.create_pipeline(
         data_source_dir=settings.DATASOURCE_DIR,
         input_data_type='pdf',
+        cached_extraction=True,
         output_data_type='markdown',
         source_filename="BacNet_PointList_C1.pdf",
+        cache_dir=True,
         output_dir=settings.OUTPUT_DIR,
         output_filename="bacnet_pointlist.md"
+    )
+
+    etl_service.create_pipeline(
+        data_source_dir=settings.DATASOURCE_DIR,
+        input_data_type='excel',
+        output_data_type='pandas-dataframe',
+        used_input_columns="A:E",  # Use columns A to E first
+        cached_transformation=True,
+        source_filename="PLG ACMV Relationship.xlsx",
+        output_dir=settings.OUTPUT_DIR,
+        output_filename="plg_acmv_relationship.csv",
+        extend_existing_output_file=False,
     )

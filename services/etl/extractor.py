@@ -24,7 +24,7 @@ class ExtractorService:
         """
         if not os.path.exists(url) and os.path.isfile(url):
             raise ValueError(f"[ExtractorService] File does not exist: {url}")
-        if not url.endswith('.xlsx') or not url.endswith('.xls'):
+        if not url.endswith('.xlsx') and not url.endswith('.xls'):
             raise ValueError(f"[ExtractorService] Invalid file type: {url}")
 
         # Implementation for extracting data from Excel
@@ -35,6 +35,8 @@ class ExtractorService:
             sheet_name=sheet,
             usecols=used_columns,
         )
+
+        print(f"Extracted data from Excel: {df_data}")
 
         return df_data
 
@@ -80,6 +82,9 @@ class ExtractorService:
         url: str,
         file_type: Literal['csv', 'excel', 'pdf'] = 'pdf',
         output: Optional[str] = None,
+        sheet: Optional[Union[str, int]] = None,
+        used_columns: Optional[str] = None,
+        extend_existing_output_file: bool = False,
     ) -> Any:
         """
         Extracts data from the given URL using the specified extractor.
@@ -87,6 +92,9 @@ class ExtractorService:
             url (str): The URL to extract data from.
             file_type (Literal['pdf', 'excel']): The type of file to extract data from. Defaults to 'pdf'.
             output (Optional[str]): The path to save the extracted data. Defaults to None.
+            sheet (Optional[Union[str, int]]): The name or index of the sheet to extract data from.
+            used_columns (Optional[str]): A colon-separated list of column names to use. e.g. 'A:E'.
+            extend_existing_output_file (bool): Whether to extend the existing output file data. Defaults to False.
         """
         if file_type == 'pdf':
             extracted_text, pdf_metadata = self.extract_pdf(
@@ -101,5 +109,28 @@ class ExtractorService:
                     for page in extracted_text:
                         dumped_file.write(page)
             return extracted_text, pdf_metadata
+        elif file_type == 'excel':
+            if not sheet:
+                raise ValueError(f"[ExtractorService] Sheet name or index is required for Excel extraction.")
+            if not used_columns:
+                raise ValueError(f"[ExtractorService] Used columns is required for Excel extraction.")
+
+            extracted_data = self.extract_excel(
+                url=url,
+                header=2,
+                sheet=sheet,
+                used_columns=used_columns,
+            )
+
+            if output:
+                # Delete any existing CSV file
+                if os.path.exists(output):
+                    os.remove(output)
+                if not extend_existing_output_file:
+                    extracted_data.to_csv(output, index=False)
+                else:
+                    extracted_data.to_csv(output, mode='a', header=False, index=False)
+
+            return extracted_data
 
 extractor_service = ExtractorService()

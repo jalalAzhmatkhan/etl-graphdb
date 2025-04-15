@@ -84,6 +84,17 @@ class TransformerService:
             df_response = pd.DataFrame(responses)
         return df_response
 
+    def excel_transformer(
+        self,
+        df_data: pd.DataFrame,
+    )->pd.DataFrame:
+        """
+        Transform Excel data into a DataFrame and Perform preprocessing.
+        :param df_data:
+        :return:
+        """
+        pass
+
     def transform(
         self,
         data: Optional[Any] = None,
@@ -98,6 +109,11 @@ class TransformerService:
 
             # Convert markdown to DataFrame
             response = self.text_transformer_from_file(data)
+        elif data_type == 'pandas-dataframe':
+            if not os.path.exists(data) and not os.path.isfile(data):
+                raise ValueError(f"[TransformerService] File does not exist: {data}")
+
+            df_data = pd.read_csv(data)
 
         if output_filepath:
             if os.path.exists(output_filepath) and os.path.isfile(output_filepath):
