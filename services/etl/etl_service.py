@@ -60,4 +60,11 @@ class ETLPipelineService:
             print(f"[ETLPipelineService] Done transforming from {extracted_file_output}")
             print(f"[ETLPipelineService] Transformed data from {extracted_file_output}: {transformed_data}")
 
+    def merge_data(self):
+        """
+        Merges data from two DataFrames.
+        :return:
+        """
+        pass
+
 etl_service = ETLPipelineService()

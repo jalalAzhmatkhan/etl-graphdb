@@ -55,3 +55,5 @@ if __name__ == '__main__':
         output_filename="plg_acmv_relationship.csv",
         extend_existing_output_file=False,
     )
+
+    etl_service

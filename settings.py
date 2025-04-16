@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     DATASOURCE_DIR: str
     OUTPUT_DIR: str
 
+    GEMINI_API_KEY: Optional[str] = None
+
     # Dask Settings
     DASK_CPU_LIMIT: int
     DASK_DASHBOARD_PORT: str
