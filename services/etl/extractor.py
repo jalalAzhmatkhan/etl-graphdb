@@ -20,7 +20,7 @@ class ExtractorService:
             sheet (Optional[Union[str, int]]): The name or index of the sheet to extract data from.
             used_columns (Optional[str]): A comma-separated list of column names to use.
         Returns:
-            dict: The extracted data.
+            dict: The extracted data frame.
         """
         if not os.path.exists(url) and os.path.isfile(url):
             raise ValueError(f"[ExtractorService] File does not exist: {url}")
@@ -83,7 +83,6 @@ class ExtractorService:
         file_type: Literal['csv', 'excel', 'pdf'] = 'pdf',
         output: Optional[str] = None,
         sheet: Optional[Union[str, int]] = None,
-        used_columns: Optional[str] = None,
         extend_existing_output_file: bool = False,
     ) -> Any:
         """
@@ -112,15 +111,26 @@ class ExtractorService:
         elif file_type == 'excel':
             if not sheet:
                 raise ValueError(f"[ExtractorService] Sheet name or index is required for Excel extraction.")
-            if not used_columns:
-                raise ValueError(f"[ExtractorService] Used columns is required for Excel extraction.")
 
-            extracted_data = self.extract_excel(
+            extracted_data_c1 = self.extract_excel(
                 url=url,
                 header=2,
                 sheet=sheet,
-                used_columns=used_columns,
+                used_columns="A:E",  # Extract
             )
+            extracted_data_c1["Zone"] = "C1"
+
+            extracted_data_c2 = self.extract_excel(
+                url=url,
+                header=2,
+                sheet=sheet,
+                used_columns="G:K",  # Extract
+            )
+            extracted_data_c2["Zone"] = "C2"
+            extracted_data_c2.columns = extracted_data_c2.columns.str.replace(r'\.1$', '', regex=True)
+
+            extracted_data = pd.concat([extracted_data_c1, extracted_data_c2], axis=0)
+            print(f"[ExtractorService] Concatenated extracted data: {extracted_data}")
 
             if output:
                 # Delete any existing CSV file

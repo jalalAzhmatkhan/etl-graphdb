@@ -1,11 +1,14 @@
+import json
 from typing import Any, Dict, List, Literal, Optional, Union
+
 from services.llm.ollama_interface import OLLAMAInterface
+from services.llm.gemini_interface import gemini_client
 
 class LLMService:
     def __init__(
         self,
         model_name: str,
-        selected_service: Literal["ollama"] = "ollama",
+        selected_service: Literal["gemini", "ollama"] = "ollama",
         service_host: Optional[str] = "localhost",
         service_port: Optional[int] = 8000,
         service_protocol: Optional[str] = "http://",  # type: ignore[assignment]
@@ -58,9 +61,37 @@ class LLMService:
             context
         )
 
+    def parse_inference_output(
+        self,
+        inference_output: str
+    )->Optional[Union[Dict[str, Any], List[Dict[str, Any]]]]:
+        """
+        Parse the inference output from the OLLAMA model to JSON.
+        :param inference_output:
+        :return:
+        """
+        try:
+            inference_output = inference_output.replace(
+                '```python', ''
+            ).replace(
+                '```', ''
+            ).replace(
+                '```json',
+                ''
+            ).replace(
+                '```JSON',
+                ''
+            ).strip()
+            data = json.loads(inference_output)
+            return data
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON: {e}")
+            print(f"Raw inference output: {inference_output}")
+            return None
+
     def inference(
         self,
-        context: Optional[str] = None,
+        context: Optional[Union[str, Dict[str, Any]]] = None,
         *,
         system_prompt: str,
         temperature: float,
@@ -77,5 +108,20 @@ class LLMService:
                 temperature=temperature,
                 user_prompt=user_prompt,
             )
+        elif self.selected_service == "gemini":
+            all_prompts = system_prompt + "\n" + user_prompt
+            attachment_data = None
+            mime_type = None
+            if context and isinstance(context, dict):
+                mime_type = context.get("mime_type", "text/plain")
+                with open(context["attachment"], "rb") as f:
+                    attachment_data = f.read()
+            llm_response = gemini_client.generate_response(
+                attachment=attachment_data,
+                attachment_mime_type=mime_type,
+                model=self.model_name,
+                prompt=all_prompts
+            )
+            return self.parse_inference_output(llm_response)
         else:
             raise ValueError(f"Service '{self.selected_service}' is not supported yet.")

@@ -15,7 +15,6 @@ class ETLPipelineService:
         input_data_type: Literal['csv', 'excel', 'pdf'] = 'pdf',
         output_data_type: Literal['markdown', 'pandas-dataframe', 'text'] = 'markdown',
         cached_transformation: bool = False,
-        used_input_columns: Optional[str] = None,
         extend_existing_output_file: Optional[bool] = False,
         *,
         source_filename: str,
@@ -33,10 +32,6 @@ class ETLPipelineService:
         )
         if not cached_extraction or not os.path.exists(extracted_file_output):
             print(f"[ETLPipelineService] Extracting from {extracted_file_output}")
-            if not used_input_columns and input_data_type == "excel":
-                raise ValueError(
-                    f"[ETLPipelineService] Used columns are required for Excel extraction."
-                )
             extractor_service.extract(
                 url=os.path.join(
                     data_source_dir,
@@ -45,7 +40,6 @@ class ETLPipelineService:
                 file_type=input_data_type,
                 output=extracted_file_output,
                 sheet="ACMV" if input_data_type == "excel" else None,
-                used_columns=used_input_columns if input_data_type == "excel" else None,
                 extend_existing_output_file=extend_existing_output_file,
             )
             print(f"[ETLPipelineService] Done extracting from {extracted_file_output}")
@@ -65,5 +59,12 @@ class ETLPipelineService:
             )
             print(f"[ETLPipelineService] Done transforming from {extracted_file_output}")
             print(f"[ETLPipelineService] Transformed data from {extracted_file_output}: {transformed_data}")
+
+    def merge_data(self):
+        """
+        Merges data from two DataFrames.
+        :return:
+        """
+        pass
 
 etl_service = ETLPipelineService()
