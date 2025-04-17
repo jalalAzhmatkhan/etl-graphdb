@@ -85,8 +85,8 @@ class LLMService:
             data = json.loads(inference_output)
             return data
         except json.JSONDecodeError as e:
-            print(f"Error decoding JSON: {e}")
-            print(f"Raw inference output: {inference_output}")
+            print(f"[LLMService] Error decoding JSON: {e}")
+            print(f"[LLMService] Raw inference output: {inference_output}")
             return None
 
     def inference(

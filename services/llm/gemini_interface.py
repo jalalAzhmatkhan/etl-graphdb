@@ -1,6 +1,8 @@
+import time
 from typing import Any, Literal, Optional
 
 from google import genai
+from google.genai import types, errors
 
 from settings import settings
 
@@ -16,7 +18,7 @@ class GeminiClient:
 
     def generate_response(
         self,
-        attachment: Optional[Any] = None,
+        attachment: Optional[bytes] = None,
         attachment_mime_type: Optional[str] = None,
         model: Literal[
             "gemini-2.5-pro-preview-03-25",
@@ -40,14 +42,32 @@ class GeminiClient:
         """
         sent_contents = [prompt]
         if attachment:
-            sent_contents.append({
-                "mime_type": attachment_mime_type,
-                "data": attachment
-            })
-        gemini_response = self.client.models.generate_content(
-            model=model,
-            contents=sent_contents
-        )
-        return gemini_response.text
+            sent_contents.append(
+                types.Part.from_bytes(
+                    data=attachment,
+                    mime_type=attachment_mime_type
+                )
+            )
+        try:
+            gemini_response = self.client.models.generate_content(
+                model=model,
+                contents=sent_contents
+            )
+            return gemini_response.text
+        except errors.ClientError as e:
+            if e.status == 429:
+                time.sleep(60)
+                return self.generate_response(
+                    attachment=attachment,
+                    attachment_mime_type=attachment_mime_type,
+                    model=model,
+                    prompt=prompt
+                )
+            error_dict = {
+                "code": e.code,
+                "status": e.status,
+                "message": e.message,
+            }
+            return str(error_dict)
 
 gemini_client = GeminiClient()
