@@ -1,6 +1,8 @@
 import os
 from typing import Any, Literal, Optional
 
+import pandas as pd
+
 from services.etl.extractor import extractor_service
 from services.etl.transformer import transformer_service
 
@@ -60,11 +62,35 @@ class ETLPipelineService:
             print(f"[ETLPipelineService] Done transforming from {extracted_file_output}")
             print(f"[ETLPipelineService] Transformed data from {extracted_file_output}: {transformed_data}")
 
-    def merge_data(self):
+    def merge_data(
+        self,
+        transformed_data_bacnet: str,
+        transformed_data_acmv: str,
+        output_filepath: Optional[str] = None
+    )->pd.DataFrame:
         """
         Merges data from two DataFrames.
+        :param transformed_data_bacnet: Path to the transformed Bacnet data
+        :param transformed_data_acmv: Path to the transformed ACMV data
+        :param output_filepath: Path to the output file. If not provided, the merged data is returned as a DataFrame.
         :return:
         """
-        pass
+        if not os.path.exists(transformed_data_bacnet) or not os.path.isfile(transformed_data_bacnet):
+            raise ValueError(f"[ETLPipelineService] File does not exist or invalid file: {output_filepath}")
+
+        df_bacnet = pd.read_csv(transformed_data_bacnet)
+
+        df_merged_data = transformer_service.merge_data_transformer(
+            data_bacnet=df_bacnet,
+            acmv_file=transformed_data_acmv
+        )
+
+        if output_filepath:
+            if os.path.exists(output_filepath) and os.path.isfile(output_filepath):
+                os.remove(output_filepath)
+            df_merged_data.to_csv(output_filepath, index=False)
+
+        df_merged_data = df_merged_data[df_merged_data["found_in_col"].notnull() & (df_merged_data["found_in_col"].str.strip() != "")]
+        return df_merged_data
 
 etl_service = ETLPipelineService()

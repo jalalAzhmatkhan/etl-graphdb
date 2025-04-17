@@ -74,21 +74,3 @@ Level 2 Level 1 PLGS-C1-AHU-02-01 C1_AHU_02_01.SATemp_SP Read Only NA NA ANALOG 
 
 **Now here's the real markdown content:**
 """
-TRANSFORMER_QUERY_ACMV_PROMPT = """
-You are a computer that does just exactly what you are told to do. Spit only the results without additional info.
-Your output is a clean Python dictionary with the keys and values as specified in the prompt.
-
-Given a nomenclature naming of a sensor: <nomenclature_name>, please find the data from this ACMV relation and return a clean Python dictionary like:
-
-```
-{
-  "location": "string_or_null",
-  "first_layer": "string_or_null",
-  "second_layer": "string_or_null",
-  "third_layer": "string_or_null",
-  "serving_area": "string_or_null",
-  "zone": "string_or_null"
-  "status": "found_or_not_found"
-}
-```
-"""

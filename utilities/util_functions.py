@@ -1,3 +1,4 @@
+import re
 from typing import List
 
 import numpy as np
@@ -37,7 +38,34 @@ def create_concatenated_string_list_vectorized(
     Returns:
         A list of concatenated strings.
     """
-    return df_input.apply(
+    df_filled = df_input.fillna("")
+    return df_filled.apply(
         lambda row: concat_symbol.join(row.values.astype(str)),
         axis=1
     ).tolist()
+
+def uniforms_nomenclature_naming(
+    nomenclature_name_input: str
+)->str:
+    """
+    Uniforms the nomenclature naming
+    :param nomenclature_name_input:
+    :return:
+    """
+    match = re.match(r"([A-Z]+)-([A-Z]\d)-([A-Z]+)(\d+)-([A-Z])(\d+)", nomenclature_name_input)
+
+    if match:
+        part_1 = match.group(1)  # PLGS
+        part_2 = match.group(2)  # C1
+        part_3 = match.group(3)  # ACB
+        number_1 = int(match.group(4))  # 11 or 4
+        part_5 = match.group(5)  # Z
+        number_2 = int(match.group(6))  # 11 or 1
+
+        # Format the numbers to 2 digits
+        formatted_number_1 = f"{number_1:02}"
+        formatted_number_2 = f"{number_2:02}"
+
+        return f"{part_1}-{part_2}-{part_3}-{formatted_number_1}-{formatted_number_2}"
+
+    return nomenclature_name_input
