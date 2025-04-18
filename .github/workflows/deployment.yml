@@ -3,7 +3,7 @@ name: Building GraphDB Visualization - Production
 on:
   push:
     branches:
-      - "main"
+      - "master"
   workflow_dispatch:
     inputs:
       project_dir:
