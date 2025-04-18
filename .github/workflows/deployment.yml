@@ -48,10 +48,10 @@ jobs:
           if [ -d "$PROJECT_DIR" ]; then
               echo "Directory exists. Pulling latest code..."
               cd "$PROJECT_DIR"
-              git pull https://x-access-token:${{ secrets.GITHUB_TOKEN }}@jalalAzhmatkhan/etl-graphdb.git
+              git pull https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/jalalAzhmatkhan/etl-graphdb.git
           else
               echo "Directory does not exist. Cloning repository..."
-              git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@jalalAzhmatkhan/etl-graphdb.git "$PROJECT_DIR"
+              git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/jalalAzhmatkhan/etl-graphdb.git "$PROJECT_DIR"
               cd "$PROJECT_DIR"
           fi
           
