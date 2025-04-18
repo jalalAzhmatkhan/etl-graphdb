@@ -11,8 +11,10 @@ if sys.platform.startswith('win'):
 
 from constants import (
     AVAILABLE_NODES_SELECTION,
+    AVAILABLE_QUERY_LIMIT,
     AVAILABLE_RELATIONS_SELECTION,
     CYPHER_TEXTAREA_INSTRUCTION,
+    DDL_QUERY_LIMITER_HELPER,
     DEFAULT_MAIN_PAGE_QUERY,
     DEFAULT_SOURCE_NODE_NAME,
     MAIN_INSTRUCTION,
@@ -106,7 +108,7 @@ def main_page():
                 st.session_state.selected_source_node = source_node
 
             relation_selection = AVAILABLE_RELATIONS_SELECTION if len(all_relations) < 1 else AVAILABLE_RELATIONS_SELECTION + all_relations
-            relation_type = st.selectbox("Select relation", options=relation_selection)
+            st.session_state.selected_relation = st.selectbox("Select relation", options=relation_selection)
 
             destination_node = st.selectbox(
                 "Select destination node",
@@ -120,6 +122,13 @@ def main_page():
                 )
             else:
                 st.session_state.selected_destination_node = destination_node
+
+            st.session_state.limit_query = st.selectbox(
+                "Select the query limiter",
+                options=AVAILABLE_QUERY_LIMIT,
+                index=2,
+                help=DDL_QUERY_LIMITER_HELPER,
+            )
 
         run_query_button = st.button(":mag_right: Run Query")
         if run_query_button:
