@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 from langchain_ollama.chat_models import ChatOllama
 import ollama
-import torch
 
 from settings import settings
 
@@ -34,9 +33,6 @@ class OLLAMAInterface:
             print(f"[OLLAMAInterface] Downloading the model '{model}' on OLLAMA server.")
             ollama_instance.pull(model)
             print(f"[OLLAMAInterface] Model '{model}' is downloaded successfully.")
-
-        if not torch.cuda.is_available():
-            print(f"[OLLAMAInterface] CUDA is NOT available. Using CPU for inference.")
 
         self.llm = ChatOllama(
             base_url=f"{protocol}{host}:{port}",
