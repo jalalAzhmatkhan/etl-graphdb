@@ -3,37 +3,41 @@ import os
 import sys
 
 import streamlit as st
-from st_link_analysis import st_link_analysis
+from streamlit_agraph import agraph, Config
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 if sys.platform.startswith('win'):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-from constants import MAIN_PAGE_GRAPH_LAYOUT
+from constants import DEFAULT_MAIN_PAGE_QUERY
 from controllers import main_page_controller
 from services import neo4j_service
-from settings import settings
-from utilities import edge_styler, node_styler
 
-@st.cache_resource
+@st.cache_resource(show_spinner="Connecting to Neo4j DB...")
 def init_neo4j_driver():
     """
     Function to initialize Neo4j Driver
     :return:
     """
-    return neo4j_service.neo4j_driver
+    try:
+        neo4j_service.neo4j_driver.verify_connectivity()
+        return neo4j_service.neo4j_driver
+    except Exception as e:
+        st.error(f"Failed to connect to Neo4j: {e}", icon="🚨")
+        return None
 
-@st.cache_data
-def get_all_nodes_and_relations(_driver):
+def default_visualization(stlt):
     """
-    Interface function to get All nodes and relations
+    Create Default Visualization
     :return:
     """
-    with _driver.session(database=settings.NEO4J_DB) as session:
-        nodes, rels = session.read_transaction(main_page_controller.fetch_graph)
-        distinct_node_lbl = session.read_transaction(main_page_controller.fetch_unique_node_labels)
-        distinct_rel_lbl = session.read_transaction(main_page_controller.fetch_unique_relations)
-        return nodes, rels, node_styler(distinct_node_lbl), edge_styler(distinct_rel_lbl)
+    driver = init_neo4j_driver()
+    nodes, edges = main_page_controller.fetch_graph_data(
+        stlt,
+        driver,
+        DEFAULT_MAIN_PAGE_QUERY
+    )
+    return nodes, edges
 
 def main_page():
     """
@@ -41,28 +45,29 @@ def main_page():
     :return:
     """
     st.set_page_config(
-        page_title="Building Sensors Graph",
+        layout="wide",
+        page_title="Building Sensor Graph",
+        page_icon=":robot:",
     )
+    st.title("Building Sensor Graph Visualization")
 
-    neo4j_driver = init_neo4j_driver()
-    nodes, rels, node_styles, edge_styles = get_all_nodes_and_relations(neo4j_driver)
+    nodes, edges = default_visualization(st)
+    if nodes:
+        st.subheader("Graph Visualization")
 
-    graph_elements = {
-        "nodes": nodes,
-        "edges": rels
-    }
-
-    col_1, col_2, col_3 = st.columns([1, 7, 1])
-    with col_2:
-        st.title("Building Sensors Graph")
-        st.write("A simple visualization graph of sensors and their connections in a building.")
-
-        st_link_analysis(
-            graph_elements,
-            MAIN_PAGE_GRAPH_LAYOUT,
-            node_styles,
-            edge_styles
+        agraph_config = Config(
+            directed=True,
+            height=700,
+            highlistNearest=True,
+            nodeHighlightBehavior=True,
+            physics=True,
+            solver="forceAtlas2Based",
+            stabilization=True,
+            width="100%",
         )
+        agraph(nodes=nodes, edges=edges, config=agraph_config)
+    else:
+        pass
 
 if __name__ == "__main__":
     main_page()
