@@ -98,7 +98,7 @@ jobs:
               [Install]
               WantedBy=multi-user.target
               EOL"
-              echo "$SERVER_PASSWORD" | sudo -S daemon-reload
+              echo "$SERVER_PASSWORD" | sudo -S systemctl daemon-reload
               echo "$SERVER_PASSWORD" | sudo -S systemctl enable $SERVICE_NAME
           fi
           
