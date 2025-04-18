@@ -10,10 +10,14 @@ if sys.platform.startswith('win'):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from constants import (
+    AVAILABLE_RELATION_DIRECTION,
     AVAILABLE_NODES_SELECTION,
+    AVAILABLE_QUERY_LIMIT,
     AVAILABLE_RELATIONS_SELECTION,
     CYPHER_TEXTAREA_INSTRUCTION,
+    DDL_QUERY_LIMITER_HELPER,
     DEFAULT_MAIN_PAGE_QUERY,
+    DEFAULT_SOURCE_NODE_NAME,
     MAIN_INSTRUCTION,
 )
 from controllers import main_page_controller
@@ -52,6 +56,7 @@ def run_visualization(
     :return:
     """
     driver = init_neo4j_driver()
+    print(f"[RunVisualization] Query: {query}")
     nodes, edges = main_page_controller.fetch_graph_data(
         stlt,
         driver,
@@ -77,11 +82,11 @@ def main_page():
     st.session_state.nodes, st.session_state.edges = run_visualization(st)
 
     with st.sidebar:
-        st.session_state.enable_custom_query = st.toggle("Enable Custom Query", value=True)
+        st.session_state.enable_custom_query = st.toggle("Enable Custom Query", value=False)
 
         if st.session_state.enable_custom_query:
             st.header("Custom Query")
-            cypher_query = st.text_area(
+            st.session_state.cypher_query = st.text_area(
                 CYPHER_TEXTAREA_INSTRUCTION,
                 DEFAULT_MAIN_PAGE_QUERY,
                 height=200,
@@ -89,30 +94,79 @@ def main_page():
         else:
             st.header("Search from the Graph Database")
             all_nodes, all_relations = populate_dropdown_list()
-            nodes_selection = AVAILABLE_NODES_SELECTION if len(all_nodes) < 1 else AVAILABLE_NODES_SELECTION[:-1] + all_nodes
+            nodes_selection = AVAILABLE_NODES_SELECTION if len(all_nodes) < 1 else AVAILABLE_NODES_SELECTION[:-1] + all_nodes + AVAILABLE_NODES_SELECTION[1:]
             source_node = st.selectbox(
                 "Select source node",
                 options=nodes_selection,
-                index=1 if len(nodes_selection) > 1 else 0,
+                index=len(nodes_selection) - 1 if len(nodes_selection) > 1 else 0,
             )
 
-            relation_selection = AVAILABLE_RELATIONS_SELECTION if len(all_relations) < 1 else AVAILABLE_RELATIONS_SELECTION[:-1] + all_relations
-            relation_type = st.selectbox("Select relation", options=relation_selection)
+            st.session_state.selected_source_node = st.text_input(
+                "Enter the source node name",
+                value=DEFAULT_SOURCE_NODE_NAME
+            )
+
+            relation_selection = AVAILABLE_RELATIONS_SELECTION if len(all_relations) < 1 else AVAILABLE_RELATIONS_SELECTION + all_relations
+            st.session_state.selected_relation = st.selectbox("Select relation", options=relation_selection)
+            st.session_state.relation_direction = st.radio(
+                "Select relation direction",
+                options=AVAILABLE_RELATION_DIRECTION,
+                index=0,
+            )
 
             destination_node = st.selectbox(
                 "Select destination node",
                 options=nodes_selection,
-                index=1 if len(nodes_selection) > 1 else 0,
+                index=len(nodes_selection) - 1 if len(nodes_selection) > 1 else 0,
             )
 
-            if destination_node == "Custom Nodes...":
-                selected_destination_node = st.text_input("Enter the destination node name")
+            st.session_state.selected_destination_node = st.text_input(
+                "Enter the destination node name"
+            )
+
+            st.session_state.limit_query = st.selectbox(
+                "Select the query limiter",
+                options=AVAILABLE_QUERY_LIMIT,
+                index=2,
+                help=DDL_QUERY_LIMITER_HELPER,
+            )
+
+            # Build the query
+            st.session_state.cypher_query = "MATCH p"
+            if source_node not in AVAILABLE_NODES_SELECTION:
+                st.session_state.cypher_query += "=(source:" + source_node
+            elif source_node == AVAILABLE_NODES_SELECTION[1]:
+                st.session_state.cypher_query += "=(source"
+            if st.session_state.selected_source_node is not None and st.session_state.selected_source_node != "":
+                st.session_state.cypher_query += " {name: \"" + st.session_state.selected_source_node + "\"})"
             else:
-                selected_destination_node = destination_node
+                st.session_state.cypher_query += ")"
+            if st.session_state.relation_direction == "Directed-Incoming":
+                st.session_state.cypher_query += "<"
+            if st.session_state.selected_relation not in AVAILABLE_RELATIONS_SELECTION:
+                st.session_state.cypher_query += "-[:" + st.session_state.selected_relation + "]-"
+            else:
+                st.session_state.cypher_query += "-[" + st.session_state.selected_relation + "]-"
+            if st.session_state.relation_direction == "Directed-Outgoing":
+                st.session_state.cypher_query += ">"
+            if destination_node not in AVAILABLE_NODES_SELECTION:
+                st.session_state.cypher_query += "(target:" + destination_node
+            elif destination_node == AVAILABLE_NODES_SELECTION[1]:
+                st.session_state.cypher_query += "(target"
+            if st.session_state.selected_destination_node is not None and st.session_state.selected_destination_node != "":
+                st.session_state.cypher_query += " {name: \"" + st.session_state.selected_destination_node + "\"})"
+            else:
+                st.session_state.cypher_query += ")"
+            st.session_state.cypher_query += " RETURN p"
+            if "No limit" not in st.session_state.limit_query:
+                st.session_state.cypher_query += " LIMIT " + st.session_state.limit_query
 
         run_query_button = st.button(":mag_right: Run Query")
         if run_query_button:
-            st.session_state.nodes, st.session_state.edges = run_visualization(st, query=cypher_query)
+            st.session_state.nodes, st.session_state.edges = run_visualization(
+                st,
+                query=st.session_state.cypher_query
+            )
 
     if st.session_state.nodes:
         with col_2:
