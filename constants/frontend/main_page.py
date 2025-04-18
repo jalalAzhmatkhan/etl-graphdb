@@ -1,3 +1,4 @@
+AVAILABLE_RELATION_DIRECTION = ["Undirected", "Directed-Incoming", "Directed-Outgoing"]
 AVAILABLE_NODES_SELECTION = [
     "*",
     "Custom node name..."
@@ -6,14 +7,14 @@ AVAILABLE_RELATIONS_SELECTION = [
     "*",
 ]
 AVAILABLE_QUERY_LIMIT = [
-    10,
-    25,
-    50,
-    100,
-    150,
-    200,
+    "10",
+    "25",
+    "50",
+    "100",
+    "150",
+    "200",
+    "No limit :warning:"
 ]
-
 CYPHER_TEXTAREA_INSTRUCTION = """
 Enter Cypher Query (must return paths 'p')
 """
