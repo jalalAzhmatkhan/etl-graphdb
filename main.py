@@ -35,16 +35,16 @@ def initialize_dask():
 if __name__ == '__main__':
     initialize_dask()
 
-    # etl_service.create_pipeline(
-    #     data_source_dir=settings.DATASOURCE_DIR,
-    #     input_data_type='pdf',
-    #     cached_extraction=True,
-    #     output_data_type='markdown',
-    #     source_filename="BacNet_PointList_C1.pdf",
-    #     cache_dir=True,
-    #     output_dir=settings.OUTPUT_DIR,
-    #     output_filename="bacnet_pointlist.md"
-    # )
+    etl_service.create_pipeline(
+        data_source_dir=settings.DATASOURCE_DIR,
+        input_data_type='pdf',
+        cached_extraction=True,
+        output_data_type='markdown',
+        source_filename="BacNet_PointList_C1.pdf",
+        cached_transformation=True,
+        output_dir=settings.OUTPUT_DIR,
+        output_filename="bacnet_pointlist.md"
+    )
 
     etl_service.create_pipeline(
         data_source_dir=settings.DATASOURCE_DIR,
@@ -62,4 +62,8 @@ if __name__ == '__main__':
         transformed_data_bacnet=os.path.join(settings.OUTPUT_DIR, "bacnet_pointlist_transformed.csv"),
         transformed_data_acmv=os.path.join(settings.OUTPUT_DIR, "plg_acmv_relationship_transformed.csv"),
         output_filepath=os.path.join(settings.OUTPUT_DIR, "merged_data.csv")
+    )
+
+    etl_service.load_data_to_graphdb(
+        os.path.join(settings.OUTPUT_DIR, "merged_data.csv")
     )
