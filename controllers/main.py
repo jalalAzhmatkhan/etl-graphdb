@@ -1,6 +1,8 @@
 import streamlit as st_inst
 from streamlit_agraph import Node, Edge
 
+from utilities import node_color_palette
+
 class MainPageController:
     """
     Controller for the main page
@@ -16,6 +18,7 @@ class MainPageController:
         try:
             with driver.session() as session:
                 result = session.run(cypher_query)
+                color_palette = node_color_palette()
 
                 for record in result:
                     path = record["p"]  # The query returns paths assigned to 'p'
@@ -27,13 +30,10 @@ class MainPageController:
                             node_ids.add(node_id)
                             # --- Node Customization ---
                             # Use 'name' property as label if available, else use the first label or ID
-                            label = node.get("name", list(node.labels)[0] if node.labels else str(node.id))
+                            node_label = list(node.labels)[0] if node.labels else str(node.id)
+                            label = node.get("name", node_label)
                             title = f"Labels: {', '.join(node.labels)}\nProperties: {dict(node)}"  # Tooltip
-                            color = "#ADD8E6"  # Default color (light blue)
-                            if "Office" in node.labels:  # Example: color Office nodes differently
-                                color = "#FFB6C1"  # Light pink
-                            elif "Tenant" in node.labels:
-                                color = "#90EE90"  # Light green
+                            color = color_palette.get(node_label, "#000000")
 
                             nodes.append(
                                 Node(

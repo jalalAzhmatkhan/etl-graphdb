@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 if sys.platform.startswith('win'):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-from constants import DEFAULT_MAIN_PAGE_QUERY
+from constants import DEFAULT_MAIN_PAGE_QUERY, MAIN_INSTRUCTION
 from controllers import main_page_controller
 from services import neo4j_service
 
@@ -45,19 +45,24 @@ def main_page():
     :return:
     """
     st.set_page_config(
+        initial_sidebar_state="collapsed",
         layout="wide",
         page_title="Building Sensor Graph",
         page_icon=":robot:",
     )
-    st.title("Building Sensor Graph Visualization")
+    col_1, col_2, col_3 = st.columns([1, 8, 1])
+    with col_2:
+        st.title("Building Sensor")
 
     nodes, edges = default_visualization(st)
     if nodes:
-        st.subheader("Graph Visualization")
+        with col_2:
+            st.subheader("Graph Visualization")
+            st.write(MAIN_INSTRUCTION)
 
         agraph_config = Config(
             directed=True,
-            height=700,
+            height=500,
             highlistNearest=True,
             nodeHighlightBehavior=True,
             physics=True,
