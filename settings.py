@@ -40,4 +40,11 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float
     LLM_NUM_THREADS: int
 
+    # Neo4j
+    NEO4J_HOST: str
+    NEO4J_PORT: int
+    NEO4J_USER: str
+    NEO4J_PASSWORD: str
+    NEO4J_DB: str
+
 settings = Settings()

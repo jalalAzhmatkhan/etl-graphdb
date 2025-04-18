@@ -4,6 +4,7 @@ from typing import Any, Literal, Optional
 import pandas as pd
 
 from services.etl.extractor import extractor_service
+from services.etl.loader import loader_service
 from services.etl.transformer import transformer_service
 
 class ETLPipelineService:
@@ -92,5 +93,16 @@ class ETLPipelineService:
 
         df_merged_data = df_merged_data[df_merged_data["found_in_col"].notnull() & (df_merged_data["found_in_col"].str.strip() != "")]
         return df_merged_data
+
+    def load_data_to_graphdb(self, merged_data_source: str):
+        """
+        Load data from CSV to Graph DB
+        :param merged_data_source:
+        :return:
+        """
+        if not os.path.exists(merged_data_source) or not os.path.isfile(merged_data_source):
+            raise ValueError(f"[ETLPipelineService] File does not exist or invalid file: {merged_data_source}")
+
+        loader_service.load_to_db(merged_data_source)
 
 etl_service = ETLPipelineService()
