@@ -135,7 +135,7 @@ def main_page():
             st.session_state.cypher_query = "MATCH p"
             if source_node not in AVAILABLE_NODES_SELECTION:
                 st.session_state.cypher_query += "=(source:" + source_node
-            elif source_node == AVAILABLE_NODES_SELECTION[1]:
+            else:
                 st.session_state.cypher_query += "=(source"
             if st.session_state.selected_source_node is not None and st.session_state.selected_source_node != "":
                 st.session_state.cypher_query += " {name: \"" + st.session_state.selected_source_node + "\"})"
@@ -151,7 +151,7 @@ def main_page():
                 st.session_state.cypher_query += ">"
             if destination_node not in AVAILABLE_NODES_SELECTION:
                 st.session_state.cypher_query += "(target:" + destination_node
-            elif destination_node == AVAILABLE_NODES_SELECTION[1]:
+            else:
                 st.session_state.cypher_query += "(target"
             if st.session_state.selected_destination_node is not None and st.session_state.selected_destination_node != "":
                 st.session_state.cypher_query += " {name: \"" + st.session_state.selected_destination_node + "\"})"
