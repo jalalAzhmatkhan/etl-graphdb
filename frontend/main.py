@@ -9,7 +9,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 if sys.platform.startswith('win'):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-from constants import DEFAULT_MAIN_PAGE_QUERY, MAIN_INSTRUCTION
+from constants import (
+    AVAILABLE_NODES_SELECTION,
+    AVAILABLE_RELATIONS_SELECTION,
+    CYPHER_TEXTAREA_INSTRUCTION,
+    DEFAULT_MAIN_PAGE_QUERY,
+    MAIN_INSTRUCTION,
+)
 from controllers import main_page_controller
 from services import neo4j_service
 
@@ -26,7 +32,21 @@ def init_neo4j_driver():
         st.error(f"Failed to connect to Neo4j: {e}", icon="🚨")
         return None
 
-def default_visualization(stlt):
+@st.cache_resource(show_spinner="Fetching Graph Data...")
+def populate_dropdown_list():
+    """
+    Function to populate the Dropdown List
+    :return:
+    """
+    driver = init_neo4j_driver()
+    all_unique_nodes = main_page_controller.fetch_distinct_nodes(driver)
+    all_unique_relations = main_page_controller.fetch_distinct_relations(driver)
+    return all_unique_nodes, all_unique_relations
+
+def run_visualization(
+    stlt,
+    query: str = DEFAULT_MAIN_PAGE_QUERY
+):
     """
     Create Default Visualization
     :return:
@@ -35,7 +55,7 @@ def default_visualization(stlt):
     nodes, edges = main_page_controller.fetch_graph_data(
         stlt,
         driver,
-        DEFAULT_MAIN_PAGE_QUERY
+        query
     )
     return nodes, edges
 
@@ -45,19 +65,62 @@ def main_page():
     :return:
     """
     st.set_page_config(
-        initial_sidebar_state="collapsed",
+        initial_sidebar_state="expanded",
         layout="wide",
         page_title="Building Sensor Graph",
         page_icon=":robot:",
     )
     col_1, col_2, col_3 = st.columns([1, 8, 1])
     with col_2:
-        st.title("Building Sensor")
+        st.title("Building Sensor Management")
 
-    nodes, edges = default_visualization(st)
-    if nodes:
+    st.session_state.nodes, st.session_state.edges = run_visualization(st)
+
+    with st.sidebar:
+        st.session_state.enable_custom_query = st.toggle("Enable Custom Query", value=True)
+
+        if st.session_state.enable_custom_query:
+            st.header("Custom Query")
+            cypher_query = st.text_area(
+                CYPHER_TEXTAREA_INSTRUCTION,
+                DEFAULT_MAIN_PAGE_QUERY,
+                height=200,
+            )
+        else:
+            st.header("Search from the Graph Database")
+            all_nodes, all_relations = populate_dropdown_list()
+            nodes_selection = AVAILABLE_NODES_SELECTION if len(all_nodes) < 1 else AVAILABLE_NODES_SELECTION[:-1] + all_nodes
+            source_node = st.selectbox(
+                "Select source node",
+                options=nodes_selection,
+                index=1 if len(nodes_selection) > 1 else 0,
+            )
+
+            relation_selection = AVAILABLE_RELATIONS_SELECTION if len(all_relations) < 1 else AVAILABLE_RELATIONS_SELECTION[:-1] + all_relations
+            relation_type = st.selectbox("Select relation", options=relation_selection)
+
+            destination_node = st.selectbox(
+                "Select destination node",
+                options=nodes_selection,
+                index=1 if len(nodes_selection) > 1 else 0,
+            )
+
+            if destination_node == "Custom Nodes...":
+                selected_destination_node = st.text_input("Enter the destination node name")
+            else:
+                selected_destination_node = destination_node
+
+        run_query_button = st.button(":mag_right: Run Query")
+        if run_query_button:
+            st.session_state.nodes, st.session_state.edges = run_visualization(st, query=cypher_query)
+
+    if st.session_state.nodes:
         with col_2:
             st.subheader("Graph Visualization")
+            st.code(
+                "Created by: Jalaluddin Al Mursyidy Fadhlurrahman",
+                language=None
+            )
             st.write(MAIN_INSTRUCTION)
 
         agraph_config = Config(
@@ -70,7 +133,7 @@ def main_page():
             stabilization=True,
             width="100%",
         )
-        agraph(nodes=nodes, edges=edges, config=agraph_config)
+        agraph(nodes=st.session_state.nodes, edges=st.session_state.edges, config=agraph_config)
     else:
         pass
 
