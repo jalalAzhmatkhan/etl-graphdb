@@ -22,7 +22,7 @@ class MainPageController:
         """Fetches distinct relations list"""
         with driver.session(database=settings.NEO4J_DB) as session:
             result = session.run(DISTINCT_RELATION_LABELS_QUERY)
-            result_relations = [item.get("label", [""])[0] for item in result.data()]
+            result_relations = [item.get("label", [""]) for item in result.data()]
             return result_relations
 
     def fetch_graph_data(self, st: st_inst, driver, cypher_query: str):
