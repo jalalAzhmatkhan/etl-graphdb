@@ -1,0 +1,107 @@
+name: Building GraphDB Visualization - Production
+
+on:
+  push:
+    branches:
+      - "main"
+  workflow_dispatch:
+    inputs:
+      project_dir:
+        description: "Project root directory"
+        required: false
+        default: "/home/rootstreamlit-jalal/etl-graphdb"
+      python_env_dir:
+        description: "Python environment directory on the server"
+        required: false
+        default: "/home/rootstreamlit-jalal/etl-graphdb/venv"
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    environment: PROD_STREAMLIT_SERVER
+
+    steps:
+      - name: Requirement Installation
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass || true
+      - name: Integration to Server
+        env:
+          PROJECT_DIR: ${{ github.event.inputs.project_dir }}
+          PYTHON_ENV_DIR: ${{ github.event.inputs.python_env_dir }}
+          SERVER_IP_ADDRESS: ${{ vars.SERVER_IP_ADDRESS }}
+          SERVER_USERNAME: ${{ secrets.SERVER_USERNAME }}
+          SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no "$SERVER_USERNAME@$SERVER_IP_ADDRESS" << 'EOF'
+          set -e
+          
+          # Navigate to the project directory
+          if [ -z "$PROJECT_DIR" ]; then
+            PROJECT_DIR="/home/rootstreamlit-jalal/etl-graphdb"
+          else
+            PROJECT_DIR="${{ github.event.inputs.project_dir }}"
+          fi
+          
+          if [ -d "$PROJECT_DIR" ]; then
+              echo "Directory exists. Pulling latest code..."
+              cd "$PROJECT_DIR"
+              git pull https://x-access-token:${{ secrets.GITHUB_TOKEN }}@jalalAzhmatkhan/etl-graphdb.git
+          else
+              echo "Directory does not exist. Cloning repository..."
+              git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@jalalAzhmatkhan/etl-graphdb.git "$PROJECT_DIR"
+              cd "$PROJECT_DIR"
+          fi
+          
+          # Python env
+          if [ -z "$PYTHON_ENV_DIR" ]; then
+            PYTHON_ENV_DIR="/home/rootstreamlit-jalal/etl-graphdb/venv"
+          else
+            PYTHON_ENV_DIR="${{ github.event.inputs.python_env_dir }}"
+          fi
+          
+          if [ -d "$PYTHON_ENV_DIR" ]; then
+              echo "Python environment directory exists. Activating..."
+              source "$PYTHON_ENV_DIR/bin/activate"
+          
+          else
+              echo "Python environment directory does not exist. Creating..."
+              python -m venv "$PYTHON_ENV_DIR"
+              source "$PYTHON_ENV_DIR/bin/activate"
+          fi
+          
+          echo "Installing requirements on the virtual environment..."
+          pip install -r requirements.txt
+          
+          # Set up or restart SystemD service
+          SERVICE_NAME="etl-graphdb"
+          SERVICE_FILE="/etc/systemd/system/$SERVICE_NAME.service"
+          if [ ! -f "$SERVICE_FILE" ]; then
+              echo "Creating SystemD service..."
+              sudo bash -c "cat > $SERVICE_FILE <<EOL
+              [Unit]
+              Description=ETL GraphDB System for Building Management
+              After=network.target
+              
+              [Service]
+              User="$SERVER_USERNAME"
+              Group="$SERVER_USERNAME"
+              Type=simple
+              
+              EnvironmentFile="$PYTHON_ENV_DIR/bin/activate"
+              
+              WorkingDirectory="$PROJECT_DIR"
+              ExecStart="$PYTHON_ENV_DIR/bin/streamlit run frontend/main.py --server.port=8503"
+              
+              [Install]
+              WantedBy=multi-user.target
+              EOL"
+              echo "$SERVER_PASSWORD" | sudo -S daemon-reload
+              echo "$SERVER_PASSWORD" | sudo -S systemctl enable $SERVICE_NAME
+          fi
+          
+          echo "Restarting SystemD service..."
+          echo "$SERVER_PASSWORD" | sudo -S systemctl restart $SERVICE_NAME
+          EOF
