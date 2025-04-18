@@ -1,12 +1,29 @@
+from typing import List
+
 import streamlit as st_inst
 from streamlit_agraph import Node, Edge
 
+from constants import DISTINCT_NODE_LABELS_QUERY, DISTINCT_RELATION_LABELS_QUERY
+from settings import settings
 from utilities import node_color_palette
 
 class MainPageController:
     """
     Controller for the main page
     """
+    def fetch_distinct_nodes(self, driver)->List[str]:
+        """Fetches distinct nodes list"""
+        with driver.session(database=settings.NEO4J_DB) as session:
+            result = session.run(DISTINCT_NODE_LABELS_QUERY)
+            result_nodes = [item.get("label", [""])[0] for item in result.data()]
+            return result_nodes
+
+    def fetch_distinct_relations(self, driver)->List[str]:
+        """Fetches distinct relations list"""
+        with driver.session(database=settings.NEO4J_DB) as session:
+            result = session.run(DISTINCT_RELATION_LABELS_QUERY)
+            result_relations = [item.get("label", [""])[0] for item in result.data()]
+            return result_relations
 
     def fetch_graph_data(self, st: st_inst, driver, cypher_query: str):
         """Fetches graph data from Neo4j using the provided query."""
@@ -16,7 +33,7 @@ class MainPageController:
         edge_tuples = set()  # To store (source_id, target_id, type) to avoid duplicates
 
         try:
-            with driver.session() as session:
+            with driver.session(database=settings.NEO4J_DB) as session:
                 result = session.run(cypher_query)
                 color_palette = node_color_palette()
 
