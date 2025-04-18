@@ -14,6 +14,7 @@ from constants import (
     AVAILABLE_RELATIONS_SELECTION,
     CYPHER_TEXTAREA_INSTRUCTION,
     DEFAULT_MAIN_PAGE_QUERY,
+    DEFAULT_SOURCE_NODE_NAME,
     MAIN_INSTRUCTION,
 )
 from controllers import main_page_controller
@@ -77,7 +78,7 @@ def main_page():
     st.session_state.nodes, st.session_state.edges = run_visualization(st)
 
     with st.sidebar:
-        st.session_state.enable_custom_query = st.toggle("Enable Custom Query", value=True)
+        st.session_state.enable_custom_query = st.toggle("Enable Custom Query", value=False)
 
         if st.session_state.enable_custom_query:
             st.header("Custom Query")
@@ -89,26 +90,36 @@ def main_page():
         else:
             st.header("Search from the Graph Database")
             all_nodes, all_relations = populate_dropdown_list()
-            nodes_selection = AVAILABLE_NODES_SELECTION if len(all_nodes) < 1 else AVAILABLE_NODES_SELECTION[:-1] + all_nodes
+            nodes_selection = AVAILABLE_NODES_SELECTION if len(all_nodes) < 1 else AVAILABLE_NODES_SELECTION[:-1] + all_nodes + AVAILABLE_NODES_SELECTION[1:]
             source_node = st.selectbox(
                 "Select source node",
                 options=nodes_selection,
-                index=1 if len(nodes_selection) > 1 else 0,
+                index=len(nodes_selection) - 1 if len(nodes_selection) > 1 else 0,
             )
 
-            relation_selection = AVAILABLE_RELATIONS_SELECTION if len(all_relations) < 1 else AVAILABLE_RELATIONS_SELECTION[:-1] + all_relations
+            if source_node == "Custom node name...":
+                st.session_state.selected_source_node = st.text_input(
+                    "Enter the source node name",
+                    value=DEFAULT_SOURCE_NODE_NAME
+                )
+            else:
+                st.session_state.selected_source_node = source_node
+
+            relation_selection = AVAILABLE_RELATIONS_SELECTION if len(all_relations) < 1 else AVAILABLE_RELATIONS_SELECTION + all_relations
             relation_type = st.selectbox("Select relation", options=relation_selection)
 
             destination_node = st.selectbox(
                 "Select destination node",
                 options=nodes_selection,
-                index=1 if len(nodes_selection) > 1 else 0,
+                index=len(nodes_selection) - 1 if len(nodes_selection) > 1 else 0,
             )
 
-            if destination_node == "Custom Nodes...":
-                selected_destination_node = st.text_input("Enter the destination node name")
+            if destination_node == "Custom node name...":
+                st.session_state.selected_destination_node = st.text_input(
+                    "Enter the destination node name"
+                )
             else:
-                selected_destination_node = destination_node
+                st.session_state.selected_destination_node = destination_node
 
         run_query_button = st.button(":mag_right: Run Query")
         if run_query_button:
